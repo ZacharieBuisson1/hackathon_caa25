@@ -8,7 +8,9 @@ LOG_DIR = path.join(ROOT_DIR_MODULE, "logs")
 makedirs(LOG_DIR, exist_ok=True)
 
 
-def setup_logge(name: str, log_path: str = ROOT_DIR_MODULE, level: int = INFO):
+def setup_logger(
+    name: str, log_path: str = ROOT_DIR_MODULE, level: int = INFO
+):
     """
     Sets up a logger with both file and console handlers.
     Args:
