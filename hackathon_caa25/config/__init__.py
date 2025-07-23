@@ -1,1 +1,7 @@
 from .departements import DEPARTEMENT_TO_REGION
+from .fires import (
+    TOTAL_SURFACE_2023,
+    TOTAL_SURFACE_5Y,
+    SURFACE_OVER_FOREST,
+    FIRE_EXTINCTION_RATES,
+)
