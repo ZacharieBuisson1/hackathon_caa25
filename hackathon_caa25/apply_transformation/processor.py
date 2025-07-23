@@ -1,14 +1,22 @@
+from pandas import DataFrame
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from hackathon_caa25.apply_transformation import (
+    add_incendies_info,
     cross_temperature_data,
-    format_zone,
+    format_altitude,
+    format_derogations,
+    format_housing,
+    format_individuals,
+    format_menages,
     format_revenues,
+    format_zone,
     one_hot_encode,
 )
 
 
 class Processor(BaseEstimator, TransformerMixin):
+    """Processor class to apply transformations on the dataset."""
 
     def __init__(self):
         self.log_means = None
@@ -18,12 +26,18 @@ class Processor(BaseEstimator, TransformerMixin):
         self.ind_snv_means = None
         self.altitude_means = None
 
-    def fit(self, data):
+    def fit(self, data: DataFrame):
+        """Fit the processor to the data.
+        Args:
+            data (DataFrame): The input DataFrame containing the data to fit.
+        Returns:
+            self: The fitted processor instance.
+        """
         x = data.copy()
         x = format_zone(x)
-        x = format_log(x)
-        x = format_men(x)
-        x = format_ind(x)
+        x = format_housing(x)
+        x = format_menages(x)
+        x = format_individuals(x)
         x = format_altitude(x)
 
         self.log_means = (
@@ -46,7 +60,13 @@ class Processor(BaseEstimator, TransformerMixin):
         )
         return self
 
-    def transform(self, data):
+    def transform(self, data: DataFrame) -> DataFrame:
+        """Transform the data using the fitted processor.
+        Args:
+            data (DataFrame): The input DataFrame containing the data to transform.
+        Returns:
+            DataFrame: The transformed DataFrame with additional features.
+        """
 
         # getting region
         data = format_zone(data)
@@ -55,21 +75,21 @@ class Processor(BaseEstimator, TransformerMixin):
         data = format_revenues(data)
 
         # HOUSING TYPES
-        data = format_log(data)
+        data = format_housing(data)
         data["LOG_REGION"] = data["LOG_TOT"].divide(
             data["ZONE_REGION"].map(self.log_means)
         )
         data["LOG_VETUSTE_REGION"] = data["LOG_VETUSTE"].divide(
             data["ZONE_REGION"].map(self.log_vetuste_means)
         )
-        # menages
-        data = format_men(data)
+        # houses
+        data = format_menages(data)
         data["MEN_REGION"] = data["MEN_TOT"].divide(
             data["ZONE_REGION"].map(self.men_means)
         )
 
-        # IND
-        data = format_ind(data)
+        # individuals information
+        data = format_individuals(data)
         data["IND_REGION"] = data["IND_TOT"].divide(
             data["ZONE_REGION"].map(self.ind_means)
         )
@@ -105,6 +125,6 @@ class Processor(BaseEstimator, TransformerMixin):
         data["KAPITAL_MAX"] = data[kapital_cols].max(axis=1)
 
         # ohe for derogations
-        data = format_derog(data)
+        data = format_derogations(data)
 
         return data
