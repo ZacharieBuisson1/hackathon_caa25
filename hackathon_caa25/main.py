@@ -1,6 +1,12 @@
+import json
 import os
 
 from AutoCarver import Features, MulticlassCarver
+from AutoCarver.selectors import (
+    ClassificationSelector,
+    KruskalMeasure,
+    SpearmanFilter,
+)
 from pandas import DataFrame
 
 from hackathon_caa25.logger import setup_logger
@@ -10,6 +16,10 @@ from hackathon_caa25.apply_transformation.split_dataset import (
 )
 from hackathon_caa25.apply_transformation.categorize_features import (
     categorize_features,
+)
+from hackathon_caa25.apply_transformation.feature_selection import (
+    select_numerical_features_with_autocarver,
+    select_categorical_features_with_autocarver,
 )
 
 
@@ -54,17 +64,21 @@ def train_frequency_model(
     logger.info("dataframe shape after processing: %s", dataframe.shape)
 
     # separate features into categorical, numerical and ordinal
-    categorical_columns, _, ordinal_columns = categorize_features(x_train)
+    categorical_columns, numerical_columns, ordinal_columns = (
+        categorize_features(x_train)
+    )
 
     # define the auto-carver features
-    autocarver_path = os.path.join(
+    autocarver_carver_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "data",
         f"{autocarver_freq_version}_freq_carver.json",
     )
-    if os.path.exists(autocarver_path):
-        logger.info("Loading existing AutoCarver from %s", autocarver_path)
-        carver = MulticlassCarver.load(autocarver_path)
+    if os.path.exists(autocarver_carver_path):
+        logger.info(
+            "Loading existing AutoCarver from %s", autocarver_carver_path
+        )
+        carver = MulticlassCarver.load(autocarver_carver_path)
         logger.info("AutoCarver loaded successfully.")
 
     else:
@@ -93,8 +107,69 @@ def train_frequency_model(
 
         # save the carver model
         carver.save(
-            autocarver_path,
+            autocarver_carver_path,
             light_mode=True,
+        )
+
+    # transform the entire dataframe
+    x_train = carver.transform(x_train)
+    x_dev = carver.transform(x_dev)
+    logger.info("Train & dev transformed using AutoCarver.")
+
+    # feature selection
+    autocarver_selector_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "data",
+        f"{autocarver_freq_version}_freq_best_features.json",
+    )
+    if os.path.exists(autocarver_selector_path):
+        logger.info(
+            "Loading existing AutoCarver selector from %s",
+            autocarver_selector_path,
+        )
+        with open(
+            autocarver_selector_path,
+            "r",
+            encoding="utf-8",
+        ) as json_file:
+            best_features = json.load(json_file)
+        logger.info(
+            "Number of selected features: %d",
+            len(best_features),
+        )
+
+    else:
+        logger.info("No existing list of selected features found.")
+        best_quantitative_features = select_numerical_features_with_autocarver(
+            x_train, y_train, numerical_columns
+        )
+        best_categorical_features = (
+            select_categorical_features_with_autocarver(
+                x_train, y_train, carver
+            )
+        )
+        best_features = best_quantitative_features + best_categorical_features
+        logger.info(
+            "Number of selected quantitative features: %d",
+            len(best_quantitative_features),
+        )
+        logger.info(
+            "Number of selected categorical features: %d",
+            len(best_categorical_features),
+        )
+        logger.info(
+            "Total number of selected features: %d", len(best_features)
+        )
+
+        # save the list of best features
+        with open(
+            autocarver_selector_path,
+            "w",
+            encoding="utf-8",
+        ) as json_file:
+            json.dump(best_features, json_file)
+        logger.info(
+            "List of best features saved to %s", autocarver_selector_path
         )
 
     return dataframe
