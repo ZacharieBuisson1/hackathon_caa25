@@ -4,6 +4,8 @@ count event types per zone, and add fire-related information to the dataset.
 
 Source : https://bdiff.agriculture.gouv.fr/indicateurs/cartes"""
 
+import os
+
 from pandas import DataFrame, read_csv
 from numpy import nan
 
@@ -18,7 +20,13 @@ def get_bdiff_incendies(path: str = "hackathon_caa25/data/") -> DataFrame:
         pd.DataFrame: DataFrame with counts of event types per department zone.
     """
     # read the dataset
-    incendies = read_csv(path + "Incendies.csv", sep=",")
+    complete_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "data",
+        "Incendies.csv",
+    )
+    incendies = read_csv(complete_path, sep=",")
 
     # convert zone to a two-character string and handle Corsica codes
     incendies["zone"] = incendies["Département"].apply(format_zone)
