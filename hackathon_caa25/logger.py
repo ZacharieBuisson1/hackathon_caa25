@@ -27,27 +27,29 @@ def setup_logger(
     logger = getLogger(name)
     logger.setLevel(level)
 
-    # Create a file handler
-    file_handler = RotatingFileHandler(
-        path.join(log_path, f"{name}.log"),
-        maxBytes=5 * 1024 * 1024,  # 5 MB
-        backupCount=5,
-    )
-    file_handler.setLevel(level)
+    # Prevent adding handlers multiple times
+    if not logger.handlers:
+        # Create a file handler
+        file_handler = RotatingFileHandler(
+            path.join(log_path, f"{name}.log"),
+            maxBytes=5 * 1024 * 1024,  # 5 MB
+            backupCount=5,
+        )
+        file_handler.setLevel(level)
 
-    # Create a console handler
-    console_handler = StreamHandler()
-    console_handler.setLevel(level)
+        # Create a console handler
+        console_handler = StreamHandler()
+        console_handler.setLevel(level)
 
-    # Create a formatter and set it for both handlers
-    formatter = Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+        # Create a formatter and set it for both handlers
+        formatter = Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
 
-    # Add the handlers to the logger
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
+        # Add the handlers to the logger
+        logger.addHandler(file_handler)
+        logger.addHandler(console_handler)
 
     return logger
