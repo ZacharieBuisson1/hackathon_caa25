@@ -1,7 +1,7 @@
 from pandas import DataFrame
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from hackathon_caa25.apply_transformation import (
+from hackathon_caa25.apply_transformation.add_features import (
     add_incendies_info,
     cross_temperature_data,
     format_altitude,
